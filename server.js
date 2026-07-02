@@ -9,19 +9,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const FONT_PATH = path.join(__dirname, 'fonts', 'NotoSansCJK.otf');
+const FONT_PATH_OTF = path.join(__dirname, 'fonts', 'NotoSansCJK.otf');
+const FONT_PATH_TTF = path.join(__dirname, 'fonts', 'NotoSansCJK.ttf');
+let FONT_PATH = FONT_PATH_OTF;
+
+if (fs.existsSync(FONT_PATH_TTF)) {
+    FONT_PATH = FONT_PATH_TTF;
+} else if (!fs.existsSync(FONT_PATH_OTF)) {
+    console.warn(`[WARNING] Font file not found. Please add a CJK font to the fonts folder.`);
+}
+
 let font = null;
 
 try {
     if (fs.existsSync(FONT_PATH)) {
         font = opentype.loadSync(FONT_PATH);
-        console.log("Font loaded successfully.");
-    } else {
-        console.warn(`[WARNING] Font file not found at ${FONT_PATH}. Please add it before generating text.`);
+        console.log("Font loaded successfully from:", FONT_PATH);
     }
 } catch (e) {
     console.error("Failed to load font:", e);
 }
+
+app.get('/', (req, res) => {
+    res.json({
+        status: "alive",
+        fontLoaded: font !== null,
+        message: "3D Text API is running successfully!"
+    });
+});
 
 // Helper to sample curves into straight lines
 function samplePath(commands, resolution = 3) {
